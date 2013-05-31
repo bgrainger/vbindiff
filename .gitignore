@@ -19,6 +19,11 @@ missing
 stamp-h1
 vbindiff
 vbindiff.1
+win32/*.opensdf
+win32/*.sdf
+win32/*.suo
+win32/*.user
 win32/Debug
+win32/ipch
 win32/Release
 win32/version.h
