@@ -63,6 +63,12 @@ class ConWindow
   WORD   attribs;
   PCHAR_INFO  data;
 
+ private:
+  static PCHAR_INFO  origData;
+  static COORD origSize;
+  static COORD origCoord;
+  static SMALL_RECT origRegion;
+
  public:
   ConWindow();
   ~ConWindow();

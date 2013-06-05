@@ -56,6 +56,11 @@ HANDLE  ConWindow::scrBuf = INVALID_HANDLE_VALUE;
 
 static DWORD  origInMode = 0;    // The original input mode
 
+PCHAR_INFO ConWindow::origData = NULL;
+COORD ConWindow::origSize = { 0 };
+COORD ConWindow::origCoord = { 0 };
+SMALL_RECT ConWindow::origRegion = { 0 };
+
 //////////////////////////////////////////////////////////////////////
 // Static Member Functions:
 //--------------------------------------------------------------------
@@ -73,17 +78,31 @@ bool ConWindow::startup()
   if (inBuf == INVALID_HANDLE_VALUE)
     return false;
 
-  scrBuf = CreateConsoleScreenBuffer(GENERIC_READ|GENERIC_WRITE,
-                                     0, NULL, // No sharing
-                                     CONSOLE_TEXTMODE_BUFFER, NULL);
+  scrBuf = CreateFile("CONOUT$", GENERIC_READ|GENERIC_WRITE,
+                      0, NULL, // No sharing
+                      OPEN_EXISTING, 0, NULL);
 
   if (scrBuf == INVALID_HANDLE_VALUE)
     return false;
 
-  if (!SetConsoleActiveScreenBuffer(scrBuf) ||
-      !SetConsoleMode(scrBuf, 0) ||
+  if (!SetConsoleMode(scrBuf, 0) ||
       !GetConsoleMode(inBuf, &origInMode) ||
       !SetConsoleMode(inBuf, 0)) {
+    CloseHandle(scrBuf);
+    return false;
+  }
+
+  // read the existing screen buffer
+  int x, y;
+  getScreenSize(x, y);
+  origData = new CHAR_INFO[x * y];
+  origCoord.X = origCoord.Y = 0;
+  origSize.X = x;
+  origSize.Y = y;
+  origRegion.Left = origRegion.Top = 0;
+  origRegion.Right = x - 1;
+  origRegion.Bottom = y - 1;
+  if (!ReadConsoleOutput(scrBuf, origData, origSize, origCoord, &origRegion)) {
     CloseHandle(scrBuf);
     return false;
   }
@@ -98,11 +117,17 @@ bool ConWindow::startup()
 
 void ConWindow::shutdown()
 {
+  showCursor(false);
+
   if (origInMode)
     SetConsoleMode(inBuf, origInMode);
-  if (scrBuf != INVALID_HANDLE_VALUE)
+  if (scrBuf != INVALID_HANDLE_VALUE) {
+    WriteConsoleOutput(scrBuf, origData, origSize, origCoord, &origRegion);
+    delete[] origData;
     CloseHandle(scrBuf);
+  }
   scrBuf = INVALID_HANDLE_VALUE;
+
 } // end ConWindow::shutdown
 
 //--------------------------------------------------------------------
@@ -113,8 +138,8 @@ void ConWindow::getScreenSize(int& x, int& y)
   CONSOLE_SCREEN_BUFFER_INFO  info;
 
   if (GetConsoleScreenBufferInfo(scrBuf, &info)) {
-    x = info.dwSize.X;
-    y = info.dwSize.Y;
+    x = info.srWindow.Right - info.srWindow.Left + 1;
+    y = info.srWindow.Bottom - info.srWindow.Top + 1;
   } else {
     x = y = 0;
   }
