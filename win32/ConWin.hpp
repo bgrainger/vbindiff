@@ -91,7 +91,7 @@ class ConWindow
   void hide() {};
   void show() {};
 
-  static void getScreenSize(int& x, int& y);
+  static void getScreenSize(int& left, int& top, int& width, int& height);
   static void hideCursor();
   static void readKey(KEY_EVENT_RECORD& event);
   static void showCursor(bool insert=true);

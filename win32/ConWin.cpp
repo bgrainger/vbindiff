@@ -93,15 +93,16 @@ bool ConWindow::startup()
   }
 
   // read the existing screen buffer
-  int x, y;
-  getScreenSize(x, y);
-  origData = new CHAR_INFO[x * y];
+  int left, top, width, height;
+  getScreenSize(left, top, width, height);
+  origData = new CHAR_INFO[width * height];
   origCoord.X = origCoord.Y = 0;
-  origSize.X = x;
-  origSize.Y = y;
-  origRegion.Left = origRegion.Top = 0;
-  origRegion.Right = x - 1;
-  origRegion.Bottom = y - 1;
+  origSize.X = width;
+  origSize.Y = height;
+  origRegion.Left = left;
+  origRegion.Top = top;
+  origRegion.Right = left + width - 1;
+  origRegion.Bottom = top + height - 1;
   if (!ReadConsoleOutput(scrBuf, origData, origSize, origCoord, &origRegion)) {
     CloseHandle(scrBuf);
     return false;
@@ -133,15 +134,17 @@ void ConWindow::shutdown()
 //--------------------------------------------------------------------
 // Return the current screen size:
 
-void ConWindow::getScreenSize(int& x, int& y)
+void ConWindow::getScreenSize(int& left, int& top, int& width, int& height)
 {
   CONSOLE_SCREEN_BUFFER_INFO  info;
 
   if (GetConsoleScreenBufferInfo(scrBuf, &info)) {
-    x = info.srWindow.Right - info.srWindow.Left + 1;
-    y = info.srWindow.Bottom - info.srWindow.Top + 1;
+    left = info.srWindow.Left;
+    top = info.srWindow.Top;
+    width = info.srWindow.Right - info.srWindow.Left + 1;
+    height = info.srWindow.Bottom - info.srWindow.Top + 1;
   } else {
-    x = y = 0;
+    left = top = width = height = 0;
   }
 } // end ConWindow::getScreenSize
 
@@ -445,10 +448,10 @@ void ConWindow::setCursor(short x, short y)
 void ConWindow::update(unsigned short margin)
 {
   SMALL_RECT r;
-  r.Left   = pos.X + margin;
-  r.Top    = pos.Y + margin;
-  r.Right  = pos.X + size.X - 1 - margin;
-  r.Bottom = pos.Y + size.Y - 1 - margin;
+  r.Left   = origRegion.Left + pos.X + margin;
+  r.Top    = origRegion.Top + pos.Y + margin;
+  r.Right  = origRegion.Left + pos.X + size.X - 1 - margin;
+  r.Bottom = origRegion.Top + pos.Y + size.Y - 1 - margin;
 
   const COORD offset = {margin, margin};
 

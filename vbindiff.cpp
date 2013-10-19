@@ -855,9 +855,9 @@ bool FileDisplay::setFile(const char* aFileName)
 //--------------------------------------------------------------------
 void calcScreenLayout(bool resize = true)
 {
-  int  screenX, screenY;
+  int  left, top, screenX, screenY;
 
-  ConWindow::getScreenSize(screenX, screenY);
+  ConWindow::getScreenSize(left, top, screenX, screenY);
 
   if (screenX < screenWidth) {
     ostringstream  err;
